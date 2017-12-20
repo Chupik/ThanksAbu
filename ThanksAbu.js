@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         Thanks, Abu!
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.2
 // @description  Исправляет битые жипеги, а также воспроизводит видео через VLC плагин
 // @author       Kochupalov Alexander
 // @match        https://2ch.hk/*
 // @grant        none
 // ==/UserScript==
 
-(function(){
+Stage('Система раскрытия на полный экран',      'screenexpand', Stage.DOMREADY,     function() {
     var $container = $('<div id="fullscreen-container"></div>');
     var $win = $( window );
 	//var $controls = $('<div id="fullscreen-container-controls"><i class="fa-thumb-tack fa"></i><i class="fa-times fa"></i></div>');
@@ -22,6 +22,7 @@
     var webm = false;
     var mp4 = false;
     var mp3 = false;
+    var video = false;
 
     var border_offset = 8; //magic number
 
@@ -91,12 +92,14 @@
         webm = src.substr(-5) == '.webm';
         mp4 = src.substr(-4) == '.mp4';
         mp3 = src.substr(-4) == '.mp3';
+        video = webm || mp4 || mp3;
+        
         mouse_on_container = false;
-
-        if (webm || mp3 || mp4) {
+        
+        //console.log(webm || mp3 || mp4);
+        if (webm) {
         	$container
-            .html(webm||mp3||mp4?'<embed type="application/x-vlc-plugin" pluginspage="http://www.videolan.org" onplay="webmPlayStarted(this)" onvolumechange="webmVolumeChanged(this)" name="media" loop="1" ' + (Store.get('other.webm_vol',false)?'':'muted="1"') + ' controls="" autoplay="" height="100%" width="100%" target="' + src + '"></embed>':'<img src="' + src + '" width="100%" height="100%" />')
-            //.append(!cloud?$controls:'')
+            .html('<embed type="application/x-vlc-plugin" pluginspage="http://www.videolan.org" onplay="webmPlayStarted(this)" onvolumechange="webmVolumeChanged(this)" name="media" loop="1" ' + (Store.get('other.webm_vol',false)?'':'muted="1"') + ' autoplay="" height="100%" width="100%" target="' + src + '"></embed>')
 			.css('top', (((win_height-image_height)/2) - border_offset) + 'px')
             .css('left', (((win_width-image_width)/2) - border_offset) + 'px')
 			.css('background-color', (cloud?'transparent':'#555555'))
@@ -112,20 +115,37 @@
 
             	resize(multiplier_width<multiplier_height ? multiplier_width : multiplier_height, true);
         	}
+        } else if (mp3 || mp4) {
+            $container
+            .html(video?'<video id="html5video" onplay="webmPlayStarted(this); this.volume=1.0" onvolumechange="webmVolumeChanged(this)" name="media" loop="1" ' + (Store.get('other.webm_vol',false)?'':'muted="1"') + ' controls="" autoplay="" height="100%" width="100%"><source class="video" height="100%" width="100%" type="' + (mp4?'video/mp4':'video/webm') +'" src="' + src + '"></source></video>':'<img src="' + src + '" width="100%" height="100%" />')
+			.css('top', (((win_height-image_height)/2) - border_offset) + 'px')
+            .css('left', (((win_width-image_width)/2) - border_offset) + 'px')
+			.css('background-color', (cloud?'transparent':'#555555'))
+            .width(image_width)
+            .height(!mp3?image_height:'200px')
+            .show();
+            
+            if(image_width > win_width || image_height > win_height) {
+            	var multiplier_width = Math.floor(win_width/image_width*10)/10;
+            	var multiplier_height = Math.floor(win_height/image_height*10)/10;
+            	if(multiplier_width < 0.1) multiplier_width = 0.1;
+            	if(multiplier_height < 0.1) multiplier_height = 0.1;
 
+            	resize(multiplier_width<multiplier_height ? multiplier_width : multiplier_height, true);
+        	}
 
         } else {
         	patchImage(src, newSrc => {
         		$container
             	.html('<img src="' + newSrc + '" width="100%" height="100%" />')
-            	//.append(!cloud?$controls:'')
 				.css('top', (((win_height-image_height)/2) - border_offset) + 'px')
             	.css('left', (((win_width-image_width)/2) - border_offset) + 'px')
 				.css('background-color', (cloud?'transparent':'#555555'))
             	.width(image_width)
             	.height(!mp3?image_height:'200px')
             	.show();
-            	if(image_width > win_width || image_height > win_height) {
+                
+                if(image_width > win_width || image_height > win_height) {
             		var multiplier_width = Math.floor(win_width/image_width*10)/10;
             		var multiplier_height = Math.floor(win_height/image_height*10)/10;
             		if(multiplier_width < 0.1) multiplier_width = 0.1;
@@ -133,9 +153,7 @@
 
             		resize(multiplier_width<multiplier_height ? multiplier_width : multiplier_height, true);
         		}
-
-
-
+                
         	});
         }
         return false;
@@ -146,7 +164,7 @@
         active = false;
         mouse_on_container = false;
         $container.hide();
-        if(webm) {
+        if(video) {
             $container.html('');
         }
     };
@@ -230,7 +248,7 @@
 
         next.find('a').click();
     });
-
+    
     $win.click(function(e){
         if(!active) return;
 		if(pinned) return;
@@ -238,6 +256,7 @@
         if($(e.target).closest('.img').length) return;
         //if($(e.target).attr('name') == 'expandfunc') return;
         if($(e.target).closest('#fullscreen-container').length) return;
+
         hide();
     });
 
@@ -262,7 +281,7 @@
 			hide(); //todo по клику на вебм не скрывать бы
 		},
         mousedown: function(e_x,e_y){
-            if(!webm) return;
+            if(!video) return;
             var container_top = parseInt($container.css('top'));
             var container_height = $container.height();
 
@@ -315,4 +334,4 @@
         if(moved < 6 && events && events.click) events.click(last_x, last_y);
     });
 }
-})()
+})
