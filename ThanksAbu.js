@@ -97,25 +97,7 @@ Stage('Система раскрытия на полный экран',      'sc
         mouse_on_container = false;
         
         //console.log(webm || mp3 || mp4);
-        if (webm) {
-        	$container
-            .html('<embed type="application/x-vlc-plugin" pluginspage="http://www.videolan.org" onplay="webmPlayStarted(this)" onvolumechange="webmVolumeChanged(this)" name="media" loop="1" ' + (Store.get('other.webm_vol',false)?'':'muted="1"') + ' autoplay="" height="100%" width="100%" target="' + src + '"></embed>')
-			.css('top', (((win_height-image_height)/2) - border_offset) + 'px')
-            .css('left', (((win_width-image_width)/2) - border_offset) + 'px')
-			.css('background-color', (cloud?'transparent':'#555555'))
-            .width(image_width)
-            .height(!mp3?image_height:'200px')
-            .show();
-
-            if(image_width > win_width || image_height > win_height) {
-            	var multiplier_width = Math.floor(win_width/image_width*10)/10;
-            	var multiplier_height = Math.floor(win_height/image_height*10)/10;
-            	if(multiplier_width < 0.1) multiplier_width = 0.1;
-            	if(multiplier_height < 0.1) multiplier_height = 0.1;
-
-            	resize(multiplier_width<multiplier_height ? multiplier_width : multiplier_height, true);
-        	}
-        } else if (mp3 || mp4) {
+        if (webm || mp3 || mp4) {
             $container
             .html(video?'<video id="html5video" onplay="webmPlayStarted(this); this.volume=1.0" onvolumechange="webmVolumeChanged(this)" name="media" loop="1" ' + (Store.get('other.webm_vol',false)?'':'muted="1"') + ' controls="" autoplay="" height="100%" width="100%"><source class="video" height="100%" width="100%" type="' + (mp4?'video/mp4':'video/webm') +'" src="' + src + '"></source></video>':'<img src="' + src + '" width="100%" height="100%" />')
 			.css('top', (((win_height-image_height)/2) - border_offset) + 'px')
