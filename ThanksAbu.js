@@ -8,6 +8,12 @@
 // @grant        none
 // ==/UserScript==
 
+$("input[type=file]").each(function() {
+    if($(this).val() === "") {
+        $(this).remove();
+    }
+});
+
 Stage('Система раскрытия на полный экран',      'screenexpand', Stage.DOMREADY,     function() {
     var $container = $('<div id="fullscreen-container"></div>');
     var $win = $( window );
